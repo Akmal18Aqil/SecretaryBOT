@@ -4,7 +4,9 @@ from src.workflow import graph_app
 
 class TelegramInterface:
     def __init__(self, token):
-        self.bot = telebot.TeleBot(token, parse_mode=None)
+        # threaded=False is CRITICAL for Vercel/Serverless
+        # Otherwise the process exits before the reply is sent
+        self.bot = telebot.TeleBot(token, parse_mode=None, threaded=False)
         
         # Register Handlers
         @self.bot.message_handler(commands=['start', 'help'])
