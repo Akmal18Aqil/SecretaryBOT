@@ -1,0 +1,8 @@
+docxtpl
+python-docx
+google-generativeai
+langgraph
+langchain-core
+python-dotenv
+pytelegrambotapi
+flask
