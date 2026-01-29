@@ -28,7 +28,11 @@ class TelegramInterface:
                 
                 # 3. Check Result
                 # 3. Check Result
-                if final_state.get('error'):
+                if final_state.get('chat_reply'):
+                    # Case A: Chat Mode
+                    self.bot.reply_to(message, final_state['chat_reply'])
+                    
+                elif final_state.get('error'):
                     error_msg = final_state['error']
                     reply_text = f"🙏 Mohon Maaf\n\n{error_msg}\n\nSilakan lengkapi instruksi Anda agar saya bisa membantu. 📝"
                     self.bot.reply_to(message, reply_text) # Removed parse_mode='Markdown' to prevent crashes

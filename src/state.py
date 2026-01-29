@@ -10,4 +10,5 @@ class AgentState(TypedDict):
     intent: Optional[str]      # e.g. 'undangan_internal'
     template_path: Optional[str]
     document_path: Optional[str]
+    chat_reply: Optional[str]   # New: For small talk replies
     error: Optional[str]

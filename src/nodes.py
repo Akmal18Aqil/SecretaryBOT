@@ -38,8 +38,16 @@ def node_listener(state: AgentState):
     try:
         if json_result:
             parsed = json.loads(json_result)
+            
+            # Check for Friendly Error
             if 'error' in parsed:
                 updates['error'] = parsed['error']
+            
+            # Check for Chat Mode
+            elif parsed.get('intent_type') == 'CHAT':
+                updates['chat_reply'] = parsed.get('reply')
+                
+            # Work Mode
             else:
                 updates['intent'] = parsed.get('jenis_surat')
         else:
@@ -53,9 +61,9 @@ def node_clerk(state: AgentState):
     """
     Node 2: Clerk
     """
-    # Propagate Error
-    if state.get('error'):
-        return {'error': state['error']}
+    # SKIP if Error OR Chat Mode
+    if state.get('error') or state.get('chat_reply'):
+        return {} # Pass through, do nothing
 
     print(f"[GRAPH] Node: Clerk Active")
     intent = state.get('intent')
@@ -74,9 +82,9 @@ def node_drafter(state: AgentState):
     """
     Node 3: Drafter
     """
-    # Propagate Error
-    if state.get('error'):
-        return {'error': state['error']}
+    # SKIP if Error OR Chat Mode
+    if state.get('error') or state.get('chat_reply'):
+        return {} # Pass through, do nothing
 
     print(f"[GRAPH] Node: Drafter Active")
     json_data = state.get('parsed_json')
