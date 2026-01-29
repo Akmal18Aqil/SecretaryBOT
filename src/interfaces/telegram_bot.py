@@ -1,6 +1,9 @@
 import os
 import telebot
 from src.workflow import graph_app
+from src.core.logger import get_logger
+
+logger = get_logger("interface.telegram")
 
 class TelegramInterface:
     def __init__(self, token):
@@ -27,7 +30,6 @@ class TelegramInterface:
                 final_state = graph_app.invoke(inputs)
                 
                 # 3. Check Result
-                # 3. Check Result
                 if final_state.get('chat_reply'):
                     # Case A: Chat Mode
                     self.bot.reply_to(message, final_state['chat_reply'])
@@ -47,11 +49,12 @@ class TelegramInterface:
                     self.bot.reply_to(message, "⚠️ Workflow selesai tanpa dokumen.")
                     
             except Exception as e:
+                logger.error(f"Critical Bot Error: {e}", exc_info=True)
                 self.bot.reply_to(message, f"💥 Critical Error: {str(e)}")
             
             # Optional: Delete 'processing' message to keep chat clean
             # self.bot.delete_message(chat_id, msg_processing.message_id)
 
     def start_polling(self):
-        print("🤖 Telegram Bot Berjalan...")
+        logger.info("🤖 Telegram Bot Berjalan...")
         self.bot.infinity_polling()

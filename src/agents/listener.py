@@ -1,6 +1,9 @@
 import os
 import json
 import google.generativeai as genai
+from src.core.logger import get_logger
+
+logger = get_logger("agent.listener")
 
 class ListenerAgent:
     def __init__(self, api_key=None):
@@ -60,10 +63,10 @@ class ListenerAgent:
         """
 
     def process_request(self, user_input):
-        print(f"\n[Agent 1] Mendengar permintaan: '{user_input}'...")
+        logger.info(f"Mendengar permintaan: '{user_input}'...")
         
         if not self.api_key:
-            print("[INFO] API Key tidak ditemukan. Menggunakan MOCK MODE (Simulasi AI).")
+            logger.warning("API Key tidak ditemukan. Menggunakan MOCK MODE (Simulasi AI).")
             # Simulasi output AI pintar
             return json.dumps({
                 "jenis_surat": "undangan_internal",
@@ -82,11 +85,11 @@ class ListenerAgent:
             model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=self.system_instruction)
             response = model.generate_content(f"Input: {user_input}\nOutput JSON:")
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
-            print(f"[DEBUG AGENT 1] JSON Generated:\n{clean_json}\n-------------------")
+            logger.info(f"JSON Generated:\n{clean_json}")
             # Validate JSON
             json.loads(clean_json) # Check if valid
-            print("[Agent 1] Selesai memproses.")
+            logger.info("Selesai memproses.")
             return clean_json
         except Exception as e:
-            print(f"[ERROR] Agent 1 Gagal: {e}")
+            logger.error(f"Agent 1 Gagal: {e}")
             return None

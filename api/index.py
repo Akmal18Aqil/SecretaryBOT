@@ -3,16 +3,16 @@ import sys
 from flask import Flask, request
 import telebot
 
-# Tambahkan root project ke path agar bisa import src
+# Add root project to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+from src.core.config import settings
 from src.interfaces.telegram_bot import TelegramInterface
 
 app = Flask(__name__)
-token = os.environ.get('TELEGRAM_BOT_TOKEN')
+token = settings.TELEGRAM_BOT_TOKEN
 
 # Global Bot Instance
-# Di Vercel (Serverless), ini akan di-init setiap cold start
 bot_interface = None
 if token:
     bot_interface = TelegramInterface(token)
@@ -33,8 +33,7 @@ def webhook():
         json_string = request.get_data().decode('utf-8')
         update = telebot.types.Update.de_json(json_string)
         
-        # Proses update (Handled synchronously)
-        # Hati-hati: Function ini harus selesai < 10 detik!
+        # Process update (Synchronous)
         bot_interface.bot.process_new_updates([update])
         
         return "OK", 200

@@ -1,4 +1,7 @@
 import os
+from src.core.logger import get_logger
+
+logger = get_logger("agent.clerk")
 
 class ClerkAgent:
     def __init__(self, template_dir='templates'):
@@ -8,19 +11,18 @@ class ClerkAgent:
         """
         Agent 2 Logic: Memilih file template.
         """
-        # Mapping nama template
-        # Di sistem produksi, ini bisa dari database atau scan file
         tpl_filename = f"tpl_{jenis_surat}.docx"
         tpl_path = os.path.join(self.template_dir, tpl_filename)
 
         if not os.path.exists(tpl_path):
-            print(f"[Agent 2] WARNING: Template tidak ditemukan: {tpl_path}")
-            print(f"[Agent 2] Menggunakan fallback template 'tpl_undangan_internal.docx' jika ada.")
+            logger.warning(f"Template tidak ditemukan: {tpl_path}")
+            logger.info("Mencoba fallback ke 'tpl_undangan_internal.docx'")
+            
             fallback = os.path.join(self.template_dir, 'tpl_undangan_internal.docx')
             if os.path.exists(fallback):
                 return fallback
             else:
                 return None
         
-        print(f"[Agent 2] Template ditemukan: {tpl_filename}")
+        logger.info(f"Template ditemukan: {tpl_filename}")
         return tpl_path

@@ -1,17 +1,16 @@
-import os
 import sys
-from dotenv import load_dotenv
+import os
 
-# Load Env
-load_dotenv()
+# Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
+from src.core.config import settings
 from src.interfaces.telegram_bot import TelegramInterface
 
 def main():
     print("=== THE SECRETARY SWARM (ONLINE MODE) ===")
     
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    token = settings.TELEGRAM_BOT_TOKEN
     if not token:
         print("[ERROR] TELEGRAM_BOT_TOKEN belum diisi di .env!")
         print("Silakan buat bot di @BotFather dan masukkan tokennya.")

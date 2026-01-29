@@ -2,6 +2,9 @@ import os
 import json
 from datetime import datetime
 from docxtpl import DocxTemplate
+from src.core.logger import get_logger
+
+logger = get_logger("agent.drafter")
 
 class DrafterAgent:
     def __init__(self, output_dir='output'):
@@ -17,16 +20,14 @@ class DrafterAgent:
             data = json.loads(json_data)
             
             # Smart Context Detection:
-            # If 'data' key exists, use it (nested structure)
-            # Otherwise, assume the whole JSON is the context (flat structure)
             context = data.get('data', data) 
             jenis_surat = data.get('jenis_surat', 'dokumen')
 
             if not context:
-                print("[Agent 3] ERROR: Data context kosong.")
+                logger.error("Data context kosong.")
                 return None
 
-            print(f"[Agent 3] Menulis dokumen...")
+            logger.info("Menulis dokumen...")
             doc = DocxTemplate(template_path)
             doc.render(context)
 
@@ -36,9 +37,9 @@ class DrafterAgent:
             output_path = os.path.join(self.output_dir, output_filename)
             
             doc.save(output_path)
-            print(f"[Agent 3] Dokumen selesai: {output_path}")
+            logger.info(f"Dokumen selesai: {output_path}")
             return output_path
             
         except Exception as e:
-            print(f"[Agent 3] ERROR: {e}")
+            logger.error(f"Generate Document Error: {e}")
             return None

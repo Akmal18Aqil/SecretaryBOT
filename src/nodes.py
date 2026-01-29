@@ -1,34 +1,26 @@
-import os
 import json
-from dotenv import load_dotenv
-
 from src.state import AgentState
 from src.agents.listener import ListenerAgent
 from src.agents.clerk import ClerkAgent
 from src.agents.drafter import DrafterAgent
-# from src.interfaces.whatsapp_bot import WhatsAppInterface
+from src.core.config import settings
+from src.core.logger import get_logger
 
-# Init Agents (Global instantiation for reuse)
-load_dotenv()
-API_KEY = os.getenv("GOOGLE_API_KEY")
-# MY_PHONE = os.getenv("MY_PHONE_NUMBER")
+logger = get_logger("workflow.node")
 
-# Determine Output Directory (Vercel = /tmp, Local = output)
-IS_VERCEL = os.environ.get('VERCEL')
-OUTPUT_DIR = '/tmp' if IS_VERCEL else 'output'
-BASE_DIR = os.path.dirname(os.path.dirname(__file__)) # Go up from src/ to root
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+# Ensure Output Dir Exists
+settings.ensure_dirs()
 
-listener_agent = ListenerAgent(api_key=API_KEY)
-clerk_agent = ClerkAgent(template_dir=TEMPLATE_DIR) 
-drafter_agent = DrafterAgent(output_dir=OUTPUT_DIR)
-# wa_bot = WhatsAppInterface(target_number=MY_PHONE)
+# Init Agents
+listener_agent = ListenerAgent(api_key=settings.GOOGLE_API_KEY)
+clerk_agent = ClerkAgent(template_dir=str(settings.TEMPLATE_DIR)) 
+drafter_agent = DrafterAgent(output_dir=str(settings.OUTPUT_DIR))
 
 def node_listener(state: AgentState):
     """
     Node 1: Listener
     """
-    print(f"\n[GRAPH] Node: Listener Active")
+    logger.info("Node: Listener Active")
     user_input = state['user_input']
     
     json_result = listener_agent.process_request(user_input)
@@ -53,6 +45,7 @@ def node_listener(state: AgentState):
         else:
             updates['error'] = "Listener failed to generate JSON"
     except Exception as e:
+        logger.error(f"JSON Parse Error: {e}")
         updates['error'] = f"JSON Parse Error: {str(e)}"
         
     return updates
@@ -63,9 +56,9 @@ def node_clerk(state: AgentState):
     """
     # SKIP if Error OR Chat Mode
     if state.get('error') or state.get('chat_reply'):
-        return {} # Pass through, do nothing
+        return {} 
 
-    print(f"[GRAPH] Node: Clerk Active")
+    logger.info("Node: Clerk Active")
     intent = state.get('intent')
     
     if not intent:
@@ -74,7 +67,9 @@ def node_clerk(state: AgentState):
     template_path = clerk_agent.get_template_path(intent)
     
     if not template_path:
-        return {'error': f"Clerk: Template not found for '{intent}' in {TEMPLATE_DIR}"}
+        error_msg = f"Clerk: Template not found for '{intent}' in {settings.TEMPLATE_DIR}"
+        logger.error(error_msg)
+        return {'error': error_msg}
         
     return {'template_path': template_path}
 
@@ -84,14 +79,16 @@ def node_drafter(state: AgentState):
     """
     # SKIP if Error OR Chat Mode
     if state.get('error') or state.get('chat_reply'):
-        return {} # Pass through, do nothing
+        return {} 
 
-    print(f"[GRAPH] Node: Drafter Active")
+    logger.info("Node: Drafter Active")
     json_data = state.get('parsed_json')
     template_path = state.get('template_path')
     
     if not json_data or not template_path:
-        return {'error': f"Drafter: Missing data. JSON: {bool(json_data)}, TPL: {bool(template_path)}"}
+        error_msg = f"Drafter: Missing data. JSON: {bool(json_data)}, TPL: {bool(template_path)}"
+        logger.error(error_msg)
+        return {'error': error_msg}
         
     doc_path = drafter_agent.generate_document(template_path, json_data)
     
@@ -104,9 +101,5 @@ def node_notifier(state: AgentState):
     """
     Node 4: Notifier (Disabled)
     """
-    print(f"[GRAPH] Node: Notifier (Skipped per user request)")
-    # doc_path = state.get('document_path')
-    # if doc_path:
-    #     wa_bot.send_document_alert(doc_path)
-    
-    return {} # No state update needed
+    logger.info("Node: Notifier (Skipped)")
+    return {}
