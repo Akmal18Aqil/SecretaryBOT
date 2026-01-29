@@ -14,7 +14,6 @@ class DrafterAgent:
         Agent 3 Logic: Mengisi template Word.
         """
         try:
-        try:
             data = json.loads(json_data)
             
             # Smart Context Detection:
