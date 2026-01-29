@@ -30,8 +30,8 @@ class TelegramInterface:
                 # 3. Check Result
                 if final_state.get('error'):
                     error_msg = final_state['error']
-                    reply_text = f"🙏 **Mohon Maaf**\n\n{error_msg}\n\nSilakan lengkapi instruksi Anda agar saya bisa membantu. 📝"
-                    self.bot.reply_to(message, reply_text, parse_mode='Markdown')
+                    reply_text = f"🙏 Mohon Maaf\n\n{error_msg}\n\nSilakan lengkapi instruksi Anda agar saya bisa membantu. 📝"
+                    self.bot.reply_to(message, reply_text) # Removed parse_mode='Markdown' to prevent crashes
                 elif final_state.get('document_path'):
                     doc_path = final_state['document_path']
                     if os.path.exists(doc_path):
