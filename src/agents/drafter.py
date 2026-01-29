@@ -14,9 +14,14 @@ class DrafterAgent:
         Agent 3 Logic: Mengisi template Word.
         """
         try:
+        try:
             data = json.loads(json_data)
-            context = data.get('data')
-            jenis_surat = data.get('jenis_surat')
+            
+            # Smart Context Detection:
+            # If 'data' key exists, use it (nested structure)
+            # Otherwise, assume the whole JSON is the context (flat structure)
+            context = data.get('data', data) 
+            jenis_surat = data.get('jenis_surat', 'dokumen')
 
             if not context:
                 print("[Agent 3] ERROR: Data context kosong.")
