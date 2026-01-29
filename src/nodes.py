@@ -13,9 +13,13 @@ load_dotenv()
 API_KEY = os.getenv("GOOGLE_API_KEY")
 # MY_PHONE = os.getenv("MY_PHONE_NUMBER")
 
+# Determine Output Directory (Vercel = /tmp, Local = output)
+IS_VERCEL = os.environ.get('VERCEL')
+OUTPUT_DIR = '/tmp' if IS_VERCEL else 'output'
+
 listener_agent = ListenerAgent(api_key=API_KEY)
-clerk_agent = ClerkAgent(template_dir='templates')
-drafter_agent = DrafterAgent(output_dir='output')
+clerk_agent = ClerkAgent(template_dir=os.path.join(os.getcwd(), 'templates')) # Ensure absolute path for templates
+drafter_agent = DrafterAgent(output_dir=OUTPUT_DIR)
 # wa_bot = WhatsAppInterface(target_number=MY_PHONE)
 
 def node_listener(state: AgentState):
