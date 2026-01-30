@@ -88,4 +88,23 @@ class Database:
             logger.error(f"Failed to fetch history: {e}")
             return []
 
+    def search_knowledge(self, query_embedding, match_threshold=0.5, match_count=3):
+        """
+        Search for similar documents using embeddings.
+        """
+        client = self.get_client()
+        if not client: return []
+        
+        try:
+            params = {
+                "query_embedding": query_embedding,
+                "match_threshold": match_threshold,
+                "match_count": match_count
+            }
+            response = client.rpc("match_documents", params).execute()
+            return response.data
+        except Exception as e:
+            logger.error(f"Search Knowledge Error: {e}")
+            return []
+
 db = Database()

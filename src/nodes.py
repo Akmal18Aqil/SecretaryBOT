@@ -4,6 +4,7 @@ from src.agents.listener import ListenerAgent
 from src.agents.clerk import ClerkAgent
 from src.agents.drafter import DrafterAgent
 from src.agents.archivist import ArchivistAgent
+from src.agents.librarian import LibrarianAgent
 from src.core.config import settings
 from src.core.logger import get_logger
 from src.core.database import db
@@ -18,6 +19,7 @@ listener_agent = ListenerAgent(api_key=settings.GOOGLE_API_KEY)
 clerk_agent = ClerkAgent(template_dir=str(settings.TEMPLATE_DIR)) 
 drafter_agent = DrafterAgent(output_dir=str(settings.OUTPUT_DIR))
 archivist_agent = ArchivistAgent()
+librarian_agent = LibrarianAgent(api_key=settings.GOOGLE_API_KEY)
 
 def node_listener(state: AgentState):
     """
@@ -49,8 +51,14 @@ def node_listener(state: AgentState):
             elif parsed.get('intent_type') == 'RECAP':
                 recap_text = archivist_agent.get_recap()
                 updates['chat_reply'] = recap_text
+            
+            # Case C: Ask Mode (RAG)
+            elif parsed.get('intent_type') == 'ASK':
+                query = parsed.get('query')
+                answer = librarian_agent.answer_question(query)
+                updates['chat_reply'] = answer
                 
-            # Case C: Work Mode
+            # Case D: Work Mode
             else:
                 updates['intent'] = parsed.get('jenis_surat')
         else:

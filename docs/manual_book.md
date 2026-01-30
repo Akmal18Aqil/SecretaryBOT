@@ -26,6 +26,11 @@ Tanya sejarah surat yang pernah dibuat.
 *   👨‍💻 User: *"Rekap surat bulan ini dong"*
 *   🤖 Bot: *"Ini laporannya: 1. Undangan Rapat (30 Jan), 2. Peminjaman Kamera (29 Jan)..."*
 
+### D. Mode Tanya Jawab Kantor (Otak Cerdas) [BARU 🧠]
+Bot bisa menjawab pertanyaan seputar SOP, Proker, dan Info Kantor.
+*   👨‍💻 User: *"Bagaimana SOP izin pulang malam?"*
+*   🤖 Bot: *"Menurut SOP, santri harus lapor H-1 dan membawa surat tugas..."* (Jawaban diambil dari database).
+
 ## 3. Manajemen Keamanan (Auth)
 
 Bot ini **TERKUNCI**. Hanya orang yang terdaftar di database Supabase yang bisa memerintahnya.
@@ -40,7 +45,20 @@ Bot ini **TERKUNCI**. Hanya orang yang terdaftar di database Supabase yang bisa 
     *   `role`: "member"
 5.  Klik **Save**. Teman Anda langsung bisa pakai bot detik itu juga.
 
-## 4. Troubleshooting
+## 4. Manajemen Pengetahuan (Untuk Admin)
+Agar bot pintar, Anda harus "mengajarinya" terlebih dahulu.
+
+**Cara Upload SOP/Info ke Otak Bot:**
+1.  Buka terminal laptop (tempat kodingan bot).
+2.  Jalankan perintah:
+    ```bash
+    python scripts/admin_add_knowledge.py
+    ```
+3.  Ketik info yang mau diajarkan. Contoh:
+    *"SOP Peminjaman Kamera: Peminjam wajib menyerahkan KTM dan mengisi form di pos satpam. Maksimal pinjam 2 hari."*
+4.  Tekan Enter. Bot akan menyimpan ilmu baru ini selamanya.
+
+## 5. Troubleshooting
 Jika bot error:
 1.  **"Unauthorized"**: Cek apakah ID Telegram Anda sudah ada di tabel `users`.
 2.  **"500 Error"**: Cek apakah `SUPABASE_URL` dan `KEY` di Vercel sudah benar.
