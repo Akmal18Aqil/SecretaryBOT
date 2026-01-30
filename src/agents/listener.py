@@ -94,7 +94,7 @@ class ListenerAgent:
 
         try:
             genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=self.system_instruction)
+            model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=self.system_instruction)
             response = model.generate_content(f"Input: {user_input}\nOutput JSON:")
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
             logger.info(f"JSON Generated:\n{clean_json}")
