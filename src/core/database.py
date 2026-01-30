@@ -101,6 +101,7 @@ class Database:
                 "match_threshold": match_threshold,
                 "match_count": match_count
             }
+            # RPC match_documents now returns (id, content, file_url, similarity)
             response = client.rpc("match_documents", params).execute()
             return response.data
         except Exception as e:

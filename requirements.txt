@@ -7,3 +7,5 @@ python-dotenv
 pytelegrambotapi
 flask
 supabase
+pypdf
+pillow

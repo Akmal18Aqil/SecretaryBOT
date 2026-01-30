@@ -42,9 +42,22 @@ class LibrarianAgent:
         if not docs:
             return "Maaf, Bos. Saya sudah cari di tumpukan dokumen tapi gak nemu info soal itu. 🙏"
 
-        # 3. Construct Context
-        context_text = "\n---\n".join([f"{d['content']}" for d in docs])
-        logger.info(f"Found {len(docs)} documents.")
+        # 3. Construct Context with File URLs
+        context_parts = []
+        file_urls = set()
+        
+        for d in docs:
+            content = d.get('content', '')
+            url = d.get('file_url')
+            
+            context_parts.append(content)
+            if url:
+                file_urls.add(url)
+
+        context_text = "\n---\n".join(context_parts)
+        files_text = "\n".join([f"- {u}" for u in file_urls]) if file_urls else "No files available."
+
+        logger.info(f"Found {len(docs)} docs, {len(file_urls)} files.")
 
         # 4. Generate Answer using LLM
         prompt = f"""
@@ -53,20 +66,22 @@ class LibrarianAgent:
         
         YOUR TASK:
         Answer the USER QUESTION based on the provided CONTEXT.
-
+        
         CONTEXT (KNOWLEDGE BASE):
         {context_text}
+        
+        AVAILABLE FILES (IF ANY):
+        {files_text}
 
         USER QUESTION:
         {user_query}
 
         INSTRUCTIONS:
-        1. **Be Helpful**: Explain the answer clearly.
-        2. **Be Witty**: Use a slightly casual, respectful Indonesian tone (ala 'Santri Modern').
-        3. **Don't be Robot**: Avoid phrases like "Berdasarkan konteks". Just answer directly.
-        4. **If Uncertain**: If the context mentions the TOPIC but lacks DETAILS, say what you found and admit what is missing politely.
-           (e.g., "Saya nemu judul SOP-nya, tapi detail isinya belum ada di database saya, Bos.")
-        5. **No Hallucinations**: Only use facts from the Context.
+        1. **Be Helpful & Witty**: Use "Santri Modern" tone.
+        2. **Provide Files**: If the user asks for a document/file AND a file URL is in "AVAILABLE FILES", provide the link clearly.
+           (e.g., "Ini dokumen SOP-nya ya bos: [https://...]")
+        3. **No Hallucinations**: Only share files listed in AVAILABLE FILES.
+        4. **If Uncertain**: Admit missing info politely.
         """
         
         try:
