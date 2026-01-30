@@ -36,28 +36,37 @@ class LibrarianAgent:
             return "Maaf, sistem pencarian sedang gangguan (Embedding Error)."
 
         # 2. Search Database
-        # Threshold 0.5 cukup aman, kalau 0.7 mungkin terlalu ketat
-        docs = self.db.search_knowledge(query_vector, match_threshold=0.4, match_count=3)
+        # Threshold 0.35 agar lebih banyak konteks yang masuk
+        docs = self.db.search_knowledge(query_vector, match_threshold=0.35, match_count=5)
         
         if not docs:
-            return "Maaf, saya belum punya informasi tentang hal itu di database SOP/Kantor. 🙏"
+            return "Maaf, Bos. Saya sudah cari di tumpukan dokumen tapi gak nemu info soal itu. 🙏"
 
         # 3. Construct Context
-        context_text = "\n\n".join([f"- {d['content']}" for d in docs])
+        context_text = "\n---\n".join([f"{d['content']}" for d in docs])
         logger.info(f"Found {len(docs)} documents.")
 
         # 4. Generate Answer using LLM
         prompt = f"""
-        CONTEXT (DATA KANTOR/SOP):
+        YOU ARE 'THE SECRETARY SWARM':
+        A helpful, witty, and professional AI Assistant for a Pesantren Multimedia Team.
+        
+        YOUR TASK:
+        Answer the USER QUESTION based on the provided CONTEXT.
+
+        CONTEXT (KNOWLEDGE BASE):
         {context_text}
 
         USER QUESTION:
         {user_query}
 
-        INSTRUCTION:
-        Answer the user's question based ONLY on the context above.
-        If the context doesn't have the answer, say you don't know (don't hallucinate).
-        Use a professional and helpful tone (Indonesian).
+        INSTRUCTIONS:
+        1. **Be Helpful**: Explain the answer clearly.
+        2. **Be Witty**: Use a slightly casual, respectful Indonesian tone (ala 'Santri Modern').
+        3. **Don't be Robot**: Avoid phrases like "Berdasarkan konteks". Just answer directly.
+        4. **If Uncertain**: If the context mentions the TOPIC but lacks DETAILS, say what you found and admit what is missing politely.
+           (e.g., "Saya nemu judul SOP-nya, tapi detail isinya belum ada di database saya, Bos.")
+        5. **No Hallucinations**: Only use facts from the Context.
         """
         
         try:
