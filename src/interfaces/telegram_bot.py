@@ -42,7 +42,11 @@ class TelegramInterface:
                 # 3. Check Result
                 if final_state.get('chat_reply'):
                     # Case A: Chat Mode / Recap
-                    self.bot.reply_to(message, final_state['chat_reply'], parse_mode='Markdown')
+                    try:
+                        self.bot.reply_to(message, final_state['chat_reply'], parse_mode='Markdown')
+                    except Exception as e:
+                        logger.warning(f"Markdown failed, falling back to plain text: {e}")
+                        self.bot.reply_to(message, final_state['chat_reply'], parse_mode=None)
                     
                 elif final_state.get('error'):
                     error_msg = final_state['error']
