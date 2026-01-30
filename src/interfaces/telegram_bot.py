@@ -2,13 +2,13 @@ import os
 import telebot
 from src.workflow import graph_app
 from src.core.logger import get_logger
+from src.core.database import db
 
 logger = get_logger("interface.telegram")
 
 class TelegramInterface:
     def __init__(self, token):
         # threaded=False is CRITICAL for Vercel/Serverless
-        # Otherwise the process exits before the reply is sent
         self.bot = telebot.TeleBot(token, parse_mode=None, threaded=False)
         
         # Register Handlers
@@ -21,23 +21,33 @@ class TelegramInterface:
             chat_id = message.chat.id
             user_input = message.text
             
+            # --- AUTH CHECK ---
+            if not db.check_access(chat_id):
+                logger.warning(f"Unauthorized Access Attempt: {chat_id}")
+                self.bot.reply_to(message, f"⛔ Maaf, ID Anda ({chat_id}) belum terdaftar sebagai pengurus.")
+                return
+            # ------------------
+            
             # 1. Notify User Process Started
             msg_processing = self.bot.reply_to(message, "⏳ Sedang memproses...")
             
             try:
                 # 2. Invoke LangGraph
-                inputs = {"user_input": user_input}
+                inputs = {
+                    "user_input": user_input, 
+                    # "telegram_id": chat_id # Pass ID to workflow if needed later
+                }
                 final_state = graph_app.invoke(inputs)
                 
                 # 3. Check Result
                 if final_state.get('chat_reply'):
-                    # Case A: Chat Mode
-                    self.bot.reply_to(message, final_state['chat_reply'])
+                    # Case A: Chat Mode / Recap
+                    self.bot.reply_to(message, final_state['chat_reply'], parse_mode='Markdown')
                     
                 elif final_state.get('error'):
                     error_msg = final_state['error']
                     reply_text = f"🙏 Mohon Maaf\n\n{error_msg}\n\nSilakan lengkapi instruksi Anda agar saya bisa membantu. 📝"
-                    self.bot.reply_to(message, reply_text) # Removed parse_mode='Markdown' to prevent crashes
+                    self.bot.reply_to(message, reply_text) 
                 elif final_state.get('document_path'):
                     doc_path = final_state['document_path']
                     if os.path.exists(doc_path):

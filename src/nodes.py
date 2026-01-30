@@ -3,8 +3,10 @@ from src.state import AgentState
 from src.agents.listener import ListenerAgent
 from src.agents.clerk import ClerkAgent
 from src.agents.drafter import DrafterAgent
+from src.agents.archivist import ArchivistAgent
 from src.core.config import settings
 from src.core.logger import get_logger
+from src.core.database import db
 
 logger = get_logger("workflow.node")
 
@@ -15,6 +17,7 @@ settings.ensure_dirs()
 listener_agent = ListenerAgent(api_key=settings.GOOGLE_API_KEY)
 clerk_agent = ClerkAgent(template_dir=str(settings.TEMPLATE_DIR)) 
 drafter_agent = DrafterAgent(output_dir=str(settings.OUTPUT_DIR))
+archivist_agent = ArchivistAgent()
 
 def node_listener(state: AgentState):
     """
@@ -22,6 +25,9 @@ def node_listener(state: AgentState):
     """
     logger.info("Node: Listener Active")
     user_input = state['user_input']
+    
+    # 0. Check Auth (Simple Logic) - Can be moved to Telegram Interface strictly
+    # But good to have here if we expand interfaces
     
     json_result = listener_agent.process_request(user_input)
     
@@ -35,11 +41,16 @@ def node_listener(state: AgentState):
             if 'error' in parsed:
                 updates['error'] = parsed['error']
             
-            # Check for Chat Mode
+            # Case A: Chat Mode
             elif parsed.get('intent_type') == 'CHAT':
                 updates['chat_reply'] = parsed.get('reply')
+
+            # Case B: Recap Mode
+            elif parsed.get('intent_type') == 'RECAP':
+                recap_text = archivist_agent.get_recap()
+                updates['chat_reply'] = recap_text
                 
-            # Work Mode
+            # Case C: Work Mode
             else:
                 updates['intent'] = parsed.get('jenis_surat')
         else:
@@ -54,7 +65,7 @@ def node_clerk(state: AgentState):
     """
     Node 2: Clerk
     """
-    # SKIP if Error OR Chat Mode
+    # SKIP if Error OR Chat Mode OR Recap Mode
     if state.get('error') or state.get('chat_reply'):
         return {} 
 
@@ -94,6 +105,18 @@ def node_drafter(state: AgentState):
     
     if not doc_path:
         return {'error': "Drafter failed to save document"}
+
+    # LOG TO DATABASE
+    try:
+        parsed = json.loads(json_data)
+        db.log_surat({
+            "nomor_surat": parsed.get('data', {}).get('nomor_surat'),
+            "jenis_surat": parsed.get('jenis_surat'),
+            "detail_json": parsed,
+            # "dibuat_oleh": telegram_id # Idealnya dipassing dari state
+        })
+    except Exception as e:
+        logger.warning(f"Failed to log to DB: {e}")
         
     return {'document_path': doc_path}
 

@@ -22,6 +22,8 @@ class Settings:
     # Secrets
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
     
     def ensure_dirs(self):
         if not self.IS_VERCEL and not self.OUTPUT_DIR.exists():
