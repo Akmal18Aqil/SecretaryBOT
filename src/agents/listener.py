@@ -1,6 +1,7 @@
 import os
 import json
 import google.generativeai as genai
+from datetime import datetime
 from src.core.logger import get_logger
 
 logger = get_logger("agent.listener")
@@ -8,71 +9,7 @@ logger = get_logger("agent.listener")
 class ListenerAgent:
     def __init__(self, api_key=None):
         self.api_key = api_key
-        self.system_instruction = """
-        Your are 'The Secretary Swarm', a witty, professional, and helpful AI assistant for a Pesantren.
-
-        YOUR JOB:
-        Classify the user's input into one of FOUR INTENTS: 'CHAT', 'WORK', 'RECAP', or 'ASK'.
-
-        ---
-        ### INTENT 1: CHAT (Small Talk)
-        User: "Halo", "Apa kabar", "Siapa kamu?"
-        OUTPUT JSON:
-        {
-            "intent_type": "CHAT",
-            "reply": "..." 
-        }
-
-        ---
-        ### INTENT 2: RECAP (History/Laporan)
-        User: "Rekap surat bulan ini", "Ada surat apa aja?", "Laporan dong"
-        OUTPUT JSON:
-        {
-            "intent_type": "RECAP"
-        }
-
-        ---
-        ### INTENT 3: ASK (Knowledge Base / RAG)
-        User: "Bagaimana SOP Izin?", "Apa proker divisi cyber?", "Siapa ketua yayasan?"
-        OUTPUT JSON:
-        {
-            "intent_type": "ASK",
-            "query": "Pertanyaan user yang dirapikan (e.g. 'Apa SOP perizinan pulang malam?')"
-        }
-
-        ---
-        ### INTENT 4: WORK (Making Documents)
-        User: "Buatkan surat undangan..."
-        OUTPUT JSON:
-        {
-            "intent_type": "WORK",
-            "jenis_surat": "undangan_internal",
-            "data": { ... }
-        }
-
-        CORE PERSONALITY FOR WORK:
-        - **Proactive**: Auto-fill missing details.
-        
-        DEFAULT VALUES:
-        - nomor_surat: "001/INV/MM/I/2026"
-        - waktu: "08.00 WIB - Selesai"
-        - tempat: "Kantor Sekretariat Multimedia"
-        - penerima: "Segenap Pengurus"
-
-        SCHEMA 'undangan_internal' (WORK):
-        {
-            "intent_type": "WORK",
-            "jenis_surat": "undangan_internal",
-            "data": { "nomor_surat": "...", "penerima": "...", "acara": "...", "hari_tanggal": "...", "waktu": "...", "tempat": "..." }
-        }
-
-        SCHEMA 'peminjaman_barang' (WORK):
-        {
-            "intent_type": "WORK",
-            "jenis_surat": "peminjaman_barang",
-            "data": { "nomor_surat": "...", "pemohon": "...", "keperluan": "...", "nama_barang": "...", "waktu_pinjam": "..." }
-        }
-        """
+        # Prompt is now dynamic in process_request
 
     def process_request(self, user_input):
         logger.info(f"Mendengar permintaan: '{user_input}'...")
@@ -93,15 +30,85 @@ class ListenerAgent:
             })
 
         try:
+            # Dynamic Context
+            current_time = datetime.now().strftime("%A, %d %B %Y, Jam %H:%M")
+            
+            system_instruction = f"""
+            ROLE:
+            You are 'The Secretary', the Chief of Staff for the Multimedia Team. 
+            You are EFFICIENT, SLIGHTLY BOSSY, and HIGHLY ORGANIZED.
+
+            CONTEXT:
+            Current Time: {current_time}
+
+            YOUR JOB:
+            Analyze the user's input and extract structured data into JSON.
+
+            STYLE GUIDE (FOR 'CHAT' REPLY):
+            - Tone: Profesional, direct, but respectful (khas lingkungan Pesantren).
+            - Keywords: "Siap Ndan", "Afwan", "Segera diproses", "Data tidak lengkap".
+            - Don't be too chatty. Get to work.
+
+            ---
+            ### VALID INTENTS:
+
+            1. **CHAT** (Small talk, greetings, unrelated questions)
+               Output: {{ "intent_type": "CHAT", "reply": "Respon kamu disini..." }}
+
+            2. **RECAP** (Asking for history, logs, reports)
+               Output: {{ "intent_type": "RECAP" }}
+
+            3. **ASK** (Asking for SOP, Knowledge, Guidelines - RAG)
+               Output: {{ "intent_type": "ASK", "query": "Refined search query" }}
+
+            4. **WORK** (Drafting specific documents)
+               Output: {{ 
+                   "intent_type": "WORK", 
+                   "jenis_surat": "nama_template", 
+                   "data": {{ ...extracted_fields... }} 
+               }}
+
+            ---
+            ### WORK SCHEMA (TEMPLATE RULES):
+
+            **Rule:** If specific data (like date/time) is implied (e.g., "besok", "nanti malam"), CALCULATE IT based on Current Time.
+
+            **A. Undangan Internal ('undangan_internal')**
+            Fields: nomor_surat, penerima, acara, hari_tanggal, waktu, tempat.
+            *Default Tempat:* "Kantor Studio Multimedia"
+
+            **B. Peminjaman Barang ('peminjaman_barang')**
+            Fields: nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam.
+
+            ---
+            INPUT: "{user_input}"
+            OUTPUT JSON ONLY:
+            """
+
             genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=self.system_instruction)
-            response = model.generate_content(f"Input: {user_input}\nOutput JSON:")
+            
+            # Use specific generation config for consistency
+            generation_config = genai.types.GenerationConfig(
+                temperature=0.1,
+                top_p=0.95,
+            )
+            
+            model = genai.GenerativeModel("gemini-2.5-flash", system_instruction=system_instruction)
+            
+            response = model.generate_content(
+                f"Input: {user_input}\nOutput JSON:",
+                generation_config=generation_config
+            )
+            
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
             logger.info(f"JSON Generated:\n{clean_json}")
+            
             # Validate JSON
             json.loads(clean_json) # Check if valid
+            
             logger.info("Selesai memproses.")
             return clean_json
+            
         except Exception as e:
             logger.error(f"Agent 1 Gagal: {e}")
             return None
