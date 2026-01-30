@@ -104,6 +104,12 @@ class LibrarianAgent:
                 prompt,
                 generation_config=generation_config
             )
+            
+            # Log Token Usage
+            if response.usage_metadata:
+                usage = response.usage_metadata
+                logger.info(f"💰 Token Usage [Librarian]: Input={usage.prompt_token_count}, Output={usage.candidates_token_count}, Total={usage.total_token_count}")
+
             return response.text.strip()
         except Exception as e:
             logger.error(f"Answer Gen Error: {e}")

@@ -100,6 +100,11 @@ class ListenerAgent:
                 generation_config=generation_config
             )
             
+            # Log Token Usage
+            if response.usage_metadata:
+                usage = response.usage_metadata
+                logger.info(f"💰 Token Usage [Listener]: Input={usage.prompt_token_count}, Output={usage.candidates_token_count}, Total={usage.total_token_count}")
+            
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
             logger.info(f"JSON Generated:\n{clean_json}")
             
