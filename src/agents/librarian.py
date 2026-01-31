@@ -88,7 +88,8 @@ class LibrarianAgent:
         - **Analyze the Question Type**:
           - IF asking for Rules/SOP: Answer formally. "Berdasarkan SOP..."
           - IF asking for Data (People/Inventory): Extract the list from context. "Berikut datanya: - A - B..."
-        - **JANGAN** lampirkan link/URL file KECUALI diminta.
+          - **IMPORTANT**: Jika user meminta file/dokumen asli (e.g., "minta file", "download", "mana filenya"), BERIKAN link dari section 'AVAILABLE FILES' di atas.
+        - **JANGAN** ragu memberikan link jika diminta.
         - Jika TIDAK ada di konteks: "Data tersebut tidak ditemukan di arsip file yang saya baca, Ndan."
         - Sapaan: Gunakan "Ndan" atau "Tadz".
         """

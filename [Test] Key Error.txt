@@ -1,0 +1,5 @@
+Ini adalah paragraf pertama. Kalimat kedua di paragraf pertama. Kalimat ketiga.
+
+Ini adalah paragraf kedua. Harusnya terpisah dari paragraf pertama dalam chunking.
+
+[Test] File ini memiliki nama aneh.

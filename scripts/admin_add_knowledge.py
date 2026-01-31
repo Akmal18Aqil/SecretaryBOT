@@ -6,6 +6,7 @@ from pypdf import PdfReader
 from docx import Document as DocxReader
 from PIL import Image
 from google.api_core.exceptions import ResourceExhausted
+import re
 
 # Add root project to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -55,19 +56,58 @@ def extract_text_from_image(path):
     print("❌ Failed after retries.")
     return ""
 
-def chunk_text(text, chunk_size=1000, overlap=100):
+def sanitize_filename(filename):
     """
-    Split long text into chunks for better vector search.
+    Sanitize filename to prevent Supabase Storage errors.
+    Replaces special chars with underscores.
     """
-    chunks = []
-    start = 0
-    text_len = len(text)
+    # Keep alphanumeric, dots, dashes, underscores. Replace everything else.
+    clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
+    # Avoid multiple underscores
+    clean_name = re.sub(r'_+', '_', clean_name)
+    return clean_name
 
-    while start < text_len:
-        end = start + chunk_size
-        chunk = text[start:end]
-        chunks.append(chunk)
-        start += (chunk_size - overlap) # Geser window dengan overlap
+def smart_chunk_text(text, target_size=1000):
+    """
+    Smart chunking that respects sentence/paragraph boundaries.
+    """
+    # 1. Split by paragraphs (double newline usually indicates paragraph break)
+    paragraphs = text.split('\n\n')
+    chunks = []
+    current_chunk = ""
+    
+    for para in paragraphs:
+        para = para.strip()
+        if not para: continue
+        
+        # If adding this paragraph exceeds target size
+        if len(current_chunk) + len(para) + 2 > target_size:
+            # If current chunk is not empty, save it
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+                current_chunk = ""
+            
+            # If paragraph itself is huge (> target_size), split by sentences
+            if len(para) > target_size:
+                # Split by sentences (look for . ! ? followed by space or end of string)
+                sentences = re.split(r'(?<=[.!?])\s+', para)
+                for sentence in sentences:
+                    if len(current_chunk) + len(sentence) + 1 > target_size:
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
+                        current_chunk = sentence
+                    else:
+                        current_chunk += (" " if current_chunk else "") + sentence
+            else:
+                current_chunk = para
+        else:
+            if current_chunk:
+                current_chunk += "\n\n" + para
+            else:
+                current_chunk = para
+                
+    if current_chunk:
+        chunks.append(current_chunk.strip())
     
     return chunks
 
@@ -121,8 +161,8 @@ def process_input(input_data):
         raw_text = input_data
 
     # Chunking
-    chunks = chunk_text(raw_text)
-    print(f"✂️  Split into {len(chunks)} chunks.")
+    chunks = smart_chunk_text(raw_text)
+    print(f"✂️  Smart Split into {len(chunks)} chunks.")
 
     # Process each chunk
     client = db.get_client()
@@ -130,7 +170,12 @@ def process_input(input_data):
     # 1. Upload File to Storage (If input is a file)
     file_url = None
     if os.path.isfile(input_data):
-        file_name = os.path.basename(input_data)
+        original_name = os.path.basename(input_data)
+        file_name = sanitize_filename(original_name)
+        
+        if original_name != file_name:
+            print(f"⚠️ Renaming '{original_name}' -> '{file_name}' (Sanitized)")
+            
         try:
             with open(input_data, 'rb') as f:
                 print(f"☁️ Uploading {file_name} to Supabase Storage...")
