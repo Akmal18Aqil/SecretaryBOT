@@ -57,7 +57,7 @@ class LibrarianAgent:
         context_text = "\n---\n".join(context_parts)
         files_text = "\n".join([f"- {u}" for u in file_urls]) if file_urls else "No files available."
 
-        logger.info(f"Found {len(docs)} docs, {len(file_urls)} files.")
+        logger.info(f"Found {len(docs)} docs. Files found: {list(file_urls)}")
 
         # 4. Generate Answer using LLM
         prompt = f"""
@@ -85,12 +85,21 @@ class LibrarianAgent:
         ---
         
         GUIDELINES:
-        GUIDELINES:
-        - **Analyze the Question Type**:
-          - IF asking for Explanation/Info (e.g., "Apa itu...", "Bagaimana alur..."): Focus on the ANSWER. Do NOT provide file links.
-          - IF asking for Data (People/Inventory): Extract the list.
-          - IF AND ONLY IF asking for the File/Download (e.g., "minta file", "bagi link", "download"): Provide the link from 'AVAILABLE FILES'.
-        - **STRICT RULE**: If the user does NOT use words like "file", "link", or "download", DO NOT include the URL. Just answer the question based on text.
+        - **Analyze the User's Intent**:
+          - **Intent: INFO/EXPLANATION** (e.g., "Apa visi misi?", "Jelaskan aturan..."): 
+            - Focus on searching the CONTEXT and creating a summary answer. 
+            - Do NOT clutter the chat with file links unless relevant.
+          
+          - **Intent: DATA EXTRACTION** (e.g., "Siapa saja anggotanya?", "List inventaris"):
+            - Extract specific data points into a clean format/list.
+            
+          - **Intent: DOCUMENT ACCESS/DOWNLOAD**:
+            - If the user implies they want the *source file*, *softfile*, *document*, or *attachment*.
+            - CHECK 'AVAILABLE FILES' immediately.
+            - IF URL exists -> Return: "Siap Ndan, ini dokumennya: [URL]"
+            - IF URL missing -> Return: "Maaf Ndan, dokumennya ada di arsip tapi link download belum tersedia."
+            
+        - **Golden Rule**: If the user just wants to *read* the content, give the text. If they want the *object* (the file), give the link.
         - Jika TIDAK ada di konteks: "Data tersebut tidak ditemukan di arsip file yang saya baca, Ndan."
         - Sapaan: Gunakan "Ndan" atau "Tadz".
         """

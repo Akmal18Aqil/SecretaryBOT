@@ -71,4 +71,6 @@ class TelegramInterface:
 
     def start_polling(self):
         logger.info("🤖 Telegram Bot Berjalan...")
+        # Remove Webhook first to prevent Conflict errors if previously on Vercel
+        self.bot.remove_webhook()
         self.bot.infinity_polling()
