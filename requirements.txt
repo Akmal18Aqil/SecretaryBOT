@@ -1,6 +1,6 @@
 docxtpl
 python-docx
-google-generativeai
+google-genai
 langgraph
 langchain-core
 python-dotenv
