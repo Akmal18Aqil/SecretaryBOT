@@ -37,7 +37,9 @@ class LibrarianAgent:
 
         # 2. Search Database
         # Threshold 0.35 agar lebih banyak konteks yang masuk
-        docs = self.db.search_knowledge(query_vector, match_threshold=0.35, match_count=5)
+        # 2. Search Database
+        # Threshold 0.35 agar lebih banyak konteks yang masuk
+        docs = self.db.search_knowledge(query_vector, match_threshold=0.35, match_count=3)
         
         if not docs:
             return "Maaf, Bos. Saya sudah cari di tumpukan dokumen tapi gak nemu info soal itu. 🙏"
@@ -61,47 +63,30 @@ class LibrarianAgent:
 
         # 4. Generate Answer using LLM
         prompt = f"""
-        IDENTITY:
-        You are the 'Multimedia Division Secretary & Knowledge Guardian'.
-        You manage ALL knowledge for the team: SOPs, Guidelines, Member Data, Inventories, and Histories.
+        ROLE: 'Multimedia Division Secretary & Knowledge Guardian'.
+        TRAITS: Smart, Helpful, Structured. Direct answers.
         
-        YOUR TRAITS:
-        1. **Smart & Adaptable**: You can answer formal SOP questions OR casual data questions (e.g., "Siapa yang bisa desain?").
-        2. **Helpful & Direct**: Give the answer directly.
-        3. **Structured**: Use lists/bullet points for data.
+        TASK: Answer User based ONLY on Context.
         
-        TASK:
-        Answer the User's Question based ONLY on the Context provided below.
-        
-        ---
-        CONTEXT FROM KNOWLEDGE BASE:
+        CONTEXT:
         {context_text}
         
         AVAILABLE FILES:
         {files_text}
         
-        USER QUESTION:
-        {user_query}
-        ---
+        USER QUESTION: {user_query}
         
         GUIDELINES:
-        - **Analyze the User's Intent**:
-          - **Intent: INFO/EXPLANATION** (e.g., "Apa visi misi?", "Jelaskan aturan..."): 
-            - Focus on searching the CONTEXT and creating a summary answer. 
-            - Do NOT clutter the chat with file links unless relevant.
-          
-          - **Intent: DATA EXTRACTION** (e.g., "Siapa saja anggotanya?", "List inventaris"):
-            - Extract specific data points into a clean format/list.
+        - **INTENT ANALYSIS**:
+          - **INFO/EXPLAIN**: Summary answer from Context. NO file links unless asked.
+          - **DATA**: Extract list.
+          - **DOC REQUEST** ("minta file", "download", "softfile"):
+            - CHECK 'AVAILABLE FILES'.
+            - FOUND -> "Siap Ndan, ini dokumennya: [URL]"
+            - NOT FOUND -> "Maaf Ndan, dokumen ada isinya tapi link download belum tersedia."
             
-          - **Intent: DOCUMENT ACCESS/DOWNLOAD**:
-            - If the user implies they want the *source file*, *softfile*, *document*, or *attachment*.
-            - CHECK 'AVAILABLE FILES' immediately.
-            - IF URL exists -> Return: "Siap Ndan, ini dokumennya: [URL]"
-            - IF URL missing -> Return: "Maaf Ndan, dokumennya ada di arsip tapi link download belum tersedia."
-            
-        - **Golden Rule**: If the user just wants to *read* the content, give the text. If they want the *object* (the file), give the link.
-        - Jika TIDAK ada di konteks: "Data tersebut tidak ditemukan di arsip file yang saya baca, Ndan."
-        - Sapaan: Gunakan "Ndan" atau "Tadz".
+        - **SAFETY**: Do NOT use markdown links [text](url). Just paste the raw URL strings.
+        - **GREETING**: Use "Ndan" or "Tadz".
         """
         
         try:
