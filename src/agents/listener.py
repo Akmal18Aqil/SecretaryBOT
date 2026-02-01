@@ -66,8 +66,8 @@ class ListenerAgent:
                 temperature=0.1, 
                 top_p=0.95,
                 system_instruction=system_instruction,
-                tools=[] 
-            )
+                tools=[], # Removing this just in case
+                tool_config={'function_calling_config': {'mode': 'NONE'}}            )
             
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
