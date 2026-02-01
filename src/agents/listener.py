@@ -66,7 +66,7 @@ class ListenerAgent:
                 temperature=0.1, 
                 top_p=0.95,
                 system_instruction=system_instruction,
-                tools=None 
+                tools=[] 
             )
             
             response = self.client.models.generate_content(
