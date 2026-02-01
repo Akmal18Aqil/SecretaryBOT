@@ -3,6 +3,7 @@ import telebot
 from src.workflow import graph_app
 from src.core.logger import get_logger
 from src.core.database import db
+from src.utils.text import escape_markdown_v2
 
 logger = get_logger("interface.telegram")
 
@@ -42,10 +43,12 @@ class TelegramInterface:
                 # 3. Check Result
                 if final_state.get('chat_reply'):
                     # Case A: Chat Mode / Recap
+                    clean_reply = escape_markdown_v2(final_state['chat_reply'])
                     try:
-                        self.bot.reply_to(message, final_state['chat_reply'], parse_mode='Markdown')
+                        self.bot.reply_to(message, clean_reply, parse_mode='MarkdownV2')
                     except Exception as e:
-                        logger.warning(f"Markdown failed, falling back to plain text: {e}")
+                        logger.warning(f"MarkdownV2 failed even after escaping: {e}")
+                        # Fallback to plain text just in case
                         self.bot.reply_to(message, final_state['chat_reply'], parse_mode=None)
                     
                 elif final_state.get('error'):

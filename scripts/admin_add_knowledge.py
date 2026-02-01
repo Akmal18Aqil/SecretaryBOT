@@ -1,7 +1,8 @@
 import sys
 import os
 import time
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from pypdf import PdfReader
 from docx import Document as DocxReader
 from PIL import Image
@@ -14,8 +15,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.core.config import settings
 from src.core.database import db
 
-# Init Gemini
-genai.configure(api_key=settings.GOOGLE_API_KEY)
+# Init Gemini Client
+client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 
 def extract_text_from_pdf(path):
     reader = PdfReader(path)
@@ -35,15 +36,17 @@ def extract_text_from_image(path):
     """
     print("👀 Vision AI is looking at the image...")
     img = Image.open(path)
-    model = genai.GenerativeModel('gemini-2.5-flash')
     
     retry_count = 0
     while retry_count < 3:
         try:
-            response = model.generate_content([
-                "Transcribe this Flowchart/Diagram into a detailed Step-by-Step SOP text in Indonesian. Don't miss any decision points.", 
-                img
-            ])
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    "Transcribe this Flowchart/Diagram into a detailed Step-by-Step SOP text in Indonesian. Don't miss any decision points.", 
+                    img
+                ]
+            )
             return response.text
         except ResourceExhausted:
             print("⏳ Quota Limit reached. Cooling down 60s... (Please Wait)")
@@ -118,13 +121,12 @@ def get_embedding(text):
     retry_count = 0
     while retry_count < 3:
         try:
-            result = genai.embed_content(
+            result = client.models.embed_content(
                 model="models/text-embedding-004",
-                content=text,
-                task_type="retrieval_document",
-                title="Knowledge Base"
+                contents=text,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT", title="Knowledge Base")
             )
-            return result['embedding']
+            return result.embeddings[0].values
         except ResourceExhausted:
             print("⏳ Embed Quota reached. Cooling down 30s...")
             time.sleep(30)

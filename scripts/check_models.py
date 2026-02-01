@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import os
 import sys
 
@@ -12,12 +12,14 @@ def list_models():
         print("❌ Script Error: APK Key not found in .env")
         return
 
-    genai.configure(api_key=key)
+    client = genai.Client(api_key=key)
 
     print("--- AVAILABLE GEMINI MODELS ---")
     try:
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
+        # Pager object, iterate to find models
+        for m in client.models.list():
+            # Check naming convention for Gemini models
+            if "gemini" in m.name:
                print(f"✅ {m.name}")
     except Exception as e:
         print(f"❌ Error fetching models: {e}")

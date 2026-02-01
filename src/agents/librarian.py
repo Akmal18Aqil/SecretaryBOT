@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from src.core.database import db
 from src.core.logger import get_logger
 
@@ -6,7 +7,7 @@ logger = get_logger("agent.librarian")
 
 class LibrarianAgent:
     def __init__(self, api_key):
-        genai.configure(api_key=api_key)
+        self.client = genai.Client(api_key=api_key)
         self.db = db
 
     def get_embedding(self, text):
@@ -14,12 +15,12 @@ class LibrarianAgent:
         Generate vector for query.
         """
         try:
-            result = genai.embed_content(
+            result = self.client.models.embed_content(
                 model="models/text-embedding-004",
-                content=text,
-                task_type="retrieval_query"
+                contents=text,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
             )
-            return result['embedding']
+            return result.embeddings[0].values
         except Exception as e:
             logger.error(f"Embedding Gen Error: {e}")
             return None
@@ -35,8 +36,6 @@ class LibrarianAgent:
         if not query_vector:
             return "Maaf, sistem pencarian sedang gangguan (Embedding Error)."
 
-        # 2. Search Database
-        # Threshold 0.35 agar lebih banyak konteks yang masuk
         # 2. Search Database
         # Threshold 0.35 agar lebih banyak konteks yang masuk
         docs = self.db.search_knowledge(query_vector, match_threshold=0.35, match_count=3)
@@ -63,50 +62,36 @@ class LibrarianAgent:
 
         # 4. Generate Answer using LLM
         prompt = f"""
-        ### IDENTITY
-        **Role:** Multimedia Division Knowledge Guardian (Arsiparis).
-        **Traits:** Wise, Helpful, Precise, Polite ("Ndan", "Tadz").
-        
-        ### MISSION
-        Answer the User's Question using ONLY the [CONTEXT] provided below.
-        
-        ### CONTEXT
+        **Role:** Assistant (Polite "Siap Ndan").
+        **Task:** Answer using provided CONTEXT only.
+
+        [CONTEXT]
         {context_text}
-        
-        ### AVAILABLE FILES
+
+        [FILES]
         {files_text}
-        
-        ### USER INPUT
-        Query: "{user_query}"
-        
-        ### EXECUTION GUIDELINES
-        1. **Check Intent:**
-           - **INFO:** If user wants explanation -> Summarize [CONTEXT] clearly.
-           - **FILE:** If user says "minta file", "download", "softfile" -> Check [AVAILABLE FILES].
-             - If found: "Siap Ndan, berikut dokumennya: [URL]"
-             - If not found: "Mohon maaf Ndan, dokumen tercatat tapi link fisik belum tersedia."
 
-        2. **Response Style:**
-           - Start with a polite acknowledgment (e.g., "Berdasarkan data...", "Siap Ndan,").
-           - Use bullet points for lists.
-           - Be direct. No filler words.
+        [QUERY]
+        "{user_query}"
 
-        3. **Safety:**
-           - NEVER invent info not in context.
-           - **DO NOT** use Markdown formatting for File URLs (print raw URL).
+        **Rules:**
+        1. **Info**: Summarize CONTEXT.
+        2. **File**: If user asks download/file, provide URL from [FILES].
+        3. **Style**: Direct, bullet points, polite.
+        4. **Safety**: NO markdown on URLs. NO hallucination.
         """
         
         try:
             # Tuned for RAG: Balanced Creativity (0.3)
-            generation_config = genai.types.GenerationConfig(
+            config = types.GenerateContentConfig(
                 temperature=0.3,
                 top_p=0.85,
             )
             
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(
-                prompt,
-                generation_config=generation_config
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+                config=config
             )
             
             # Log Token Usage
