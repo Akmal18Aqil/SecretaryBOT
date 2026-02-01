@@ -61,10 +61,12 @@ class ListenerAgent:
             """ 
 
             # Config: LOW TEMP for Logic/Classification
+            # Explicitly disable tools to prevent "Phantom Token" usage
             config = types.GenerateContentConfig(
                 temperature=0.1, 
                 top_p=0.95,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                tools=None 
             )
             
             response = self.client.models.generate_content(

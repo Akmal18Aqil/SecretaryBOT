@@ -130,7 +130,7 @@ def node_drafter(state: AgentState):
 
 def node_notifier(state: AgentState):
     """
-    Node 4: Notifier (Disabled)
+    Node 4: Notifier (Pass-through)
     """
-    logger.info("Node: Notifier (Skipped)")
+    logger.info("Node: Workflow Complete. Handoff to Interface.")
     return {}

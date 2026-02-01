@@ -75,17 +75,18 @@ class LibrarianAgent:
         "{user_query}"
 
         **Rules:**
-        1. **Info**: Summarize CONTEXT.
+        1. **Info**: If user asks for explanation, provide a COMPREHENSIVE answer based on [CONTEXT]. Do not be too brief.
         2. **File**: If user asks download/file, provide URL from [FILES].
-        3. **Style**: Direct, bullet points, polite.
+        3. **Style**: Polite ("Siap Ndan"), professional, and helpful. 
         4. **Safety**: NO markdown on URLs. NO hallucination.
         """
         
         try:
-            # Tuned for RAG: Balanced Creativity (0.3)
+            # Tuned for RAG: Balanced Creativity (0.4) for better explanations
             config = types.GenerateContentConfig(
-                temperature=0.3,
+                temperature=0.4,
                 top_p=0.85,
+                tools=None
             )
             
             response = self.client.models.generate_content(
