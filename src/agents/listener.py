@@ -16,7 +16,7 @@ class ListenerAgent:
         else:
             self.client = None
 
-    def process_request(self, user_input):
+    def process_request(self, user_input, history_context=None):
         logger.info(f"Mendengar permintaan: '{user_input}'...")
         
         if not self.client:
@@ -38,19 +38,32 @@ class ListenerAgent:
             # Dynamic Context
             current_time = datetime.now().strftime("%A, %d %B %Y, Jam %H:%M")
             
+            # History String Formatting
+            history_str = "None"
+            if history_context:
+                history_str = f"PREVIOUS_JSON_STATE: {history_context}"
+
             system_instruction = f"""
             **Context:** Now={current_time}.
-            **Task:** Classify intent and extract entities into JSON.
+            
+            **History (Previous State):**
+            {history_str}
+
+            **Task:** 
+            1. Analyze **Input** relative to **History**.
+            2. If **Input** is a follow-up (e.g., adds detail like time/place), UPDATE the **History** JSON.
+            3. If **Input** is a new request, IGNORE history and create new JSON.
+            4. Classify intent and extract entities.
 
             **Intents:**
             1. **CHAT**: Casual/Greeting.
-               Output: {{ "intent_type": "CHAT", "reply": "Polite response (Siap Ndan)" }}
+               Output: {{ "intent_type": "CHAT", "reply": "Polite response" }}
             2. **RECAP**: Reports/Logs.
                Output: {{ "intent_type": "RECAP" }}
             3. **ASK**: Q&A/Knowledge.
                Output: {{ "intent_type": "ASK", "query": "Optimized query" }}
             4. **WORK**: Document drafting.
-               Rules: Calculate dates relative to Now.
+               Rules: Calculate dates relative to Now. Merge with History if related.
                Schemas:
                  - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
                  - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]

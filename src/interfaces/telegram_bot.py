@@ -38,7 +38,9 @@ class TelegramInterface:
                     "user_input": user_input, 
                     # "telegram_id": chat_id # Pass ID to workflow if needed later
                 }
-                final_state = graph_app.invoke(inputs)
+                # Use Checkpointer Thread ID
+                config = {"configurable": {"thread_id": str(chat_id)}}
+                final_state = graph_app.invoke(inputs, config=config)
                 
                 # 3. Check Result
                 if final_state.get('chat_reply'):

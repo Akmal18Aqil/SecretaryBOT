@@ -31,7 +31,9 @@ def node_listener(state: AgentState):
     # 0. Check Auth (Simple Logic) - Can be moved to Telegram Interface strictly
     # But good to have here if we expand interfaces
     
-    json_result = listener_agent.process_request(user_input)
+    # Extract History from State
+    history = state.get('parsed_json')
+    json_result = listener_agent.process_request(user_input, history_context=history)
     
     updates = {'parsed_json': json_result}
     

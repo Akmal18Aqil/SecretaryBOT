@@ -25,7 +25,9 @@ def create_workflow():
     workflow.add_edge("notifier", END)
 
     # 4. Compile
-    app = workflow.compile()
+    from langgraph.checkpoint.memory import MemorySaver
+    memory = MemorySaver()
+    app = workflow.compile(checkpointer=memory)
     return app
 
 # Expose the compiled graph
