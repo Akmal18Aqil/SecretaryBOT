@@ -1,6 +1,7 @@
 import os
 import telebot
 from src.workflow import graph_app
+from src.core.config import settings
 from src.core.logger import get_logger
 from src.core.database import db
 from src.utils.text import escape_markdown_v2
@@ -30,14 +31,18 @@ class TelegramInterface:
                     file_info = self.bot.get_file(file_id)
                     downloaded_file = self.bot.download_file(file_info.file_path)
                     
-                    # Create Temp Dir
-                    temp_dir = os.path.join(os.getcwd(), 'temp')
-                    os.makedirs(temp_dir, exist_ok=True)
-                    
+                    # Use Configured Output Dir (Vercel Compliant)
+                    temp_dir = settings.OUTPUT_DIR
+                    if not os.path.exists(temp_dir):
+                        try:
+                            os.makedirs(temp_dir, exist_ok=True)
+                        except OSError as e:
+                            logger.warning(f"Failed to create dirs (might exist or readonly): {e}")
+
                     # Save File
                     ext = file_info.file_path.split('.')[-1]
                     file_name = f"voice_{chat_id}_{message.message_id}.{ext}"
-                    audio_path = os.path.join(temp_dir, file_name)
+                    audio_path = str(temp_dir / file_name) # Pathlib join
                     
                     with open(audio_path, 'wb') as new_file:
                         new_file.write(downloaded_file)
