@@ -53,6 +53,10 @@ class ListenerAgent:
             2. FALLBACK: If mandatory fields (waktu, tempat, agenda) are missing/null, YOU MUST fill `reply` with a question.
             3. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
             4. CONTEXT MERGE: If History has a 'reply' (question) and Input is a short answer, MERGE Input into History. Do NOT create a new blank request.
+            5. CONTENT ENRICHMENT:
+               - 'pembahasan': WRITE A DETAILED SUMMARY. Use bullet points or multiple sentences. Capture technical details. Do NOT be brevity.
+               - 'kesimpulan': If not spoken explicitly, GENERATE a logical conclusion based on the discussion points.
+               - 'tugas': EXTRACT implied action items (Who needs to do What). If none, summarize next steps.
             
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
