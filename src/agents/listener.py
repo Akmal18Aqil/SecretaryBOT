@@ -48,21 +48,25 @@ class ListenerAgent:
             TASK: Analyze Input vs History. If Input answers a question in History, UPDATE History. Only default to NEW if Input is unrelated.
             OUTPUT: JSON only. Strict Compliance Required.
             
+            PROTOCOL (You MUST follow this sequence):
+            1. EXTRACT details from Input & History (Merge Context).
+            2. ENRICH Content: Create detailed summary for 'pembahasan', derive 'kesimpulan' and 'tugas'.
+            3. VALIDATE Mandatory Fields:
+               - `notulensi`: Requires [hari_tanggal, waktu, tempat, agenda].
+               - `undangan_internal`: Requires [hari_tanggal, waktu, tempat, acara].
+            4. DECISION:
+               - IF any mandatory field is MISSING/NULL: Set `reply` = "Mohon informasikan [missing item]nya?" 
+               - ELSE: Set `reply` = null.
+            
             RULES:
-            1. DATE RESOLUTION: Convert relative dates (e.g., "besok", "minggu depan") to Absolute Format (DD Month YYYY) based on 'Now'.
-            2. FALLBACK: If mandatory fields (waktu, tempat, agenda) are missing/null, YOU MUST fill `reply` with a question.
-            3. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
-            4. CONTEXT MERGE: If History has a 'reply' (question) and Input is a short answer, MERGE Input into History. Do NOT create a new blank request.
-            5. CONTENT ENRICHMENT:
-               - 'pembahasan': WRITE A DETAILED SUMMARY. Use bullet points or multiple sentences. Capture technical details. Do NOT be brevity.
-               - 'kesimpulan': If not spoken explicitly, GENERATE a logical conclusion based on the discussion points.
-               - 'tugas': EXTRACT implied action items (Who needs to do What). If none, summarize next steps.
+            1. DATE RESOLUTION: Convert relative dates to Absolute Format (DD Month YYYY) based on 'Now'.
+            2. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
             
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
             - RECAP: {{ "intent_type": "RECAP", "reply": null }}
             - ASK: {{ "intent_type": "ASK", "query": "str", "reply": null }}
-            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "reply": "Question if missing data else null", "data": {{...}} }}
+            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "reply": "Question if validation fails else null", "data": {{...}} }}
             Schemas:
             - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
             - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
