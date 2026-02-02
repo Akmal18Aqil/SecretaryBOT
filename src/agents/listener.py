@@ -74,11 +74,11 @@ class ListenerAgent:
             # Input Text
             prompt_parts.append(f"In: {user_input}\nOut JSON:") 
 
-            # Config: LOW TEMP for Logic/Classification
-            # Explicitly disable tools to prevent "Phantom Token" usage
+            # Config: ZERO TEMP + JSON MODE (Eliminate Thinking Tax)
             config = types.GenerateContentConfig(
-                temperature=0.1, 
+                temperature=0.0, 
                 top_p=0.95,
+                response_mime_type="application/json",
                 system_instruction=system_instruction,
                 tools=None 
             )
