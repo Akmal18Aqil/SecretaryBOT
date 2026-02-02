@@ -46,12 +46,18 @@ class ListenerAgent:
             system_instruction = f"""
             CTX: Now={current_time}. History={history_str}
             TASK: Analyze Input vs History. If follow-up, UPDATE History. If new, IGNORE History.
-            OUTPUT: JSON only.
+            OUTPUT: JSON only. Strict Compliance Required.
+            
+            RULES:
+            1. `reply` field is MANDATORY. set to null if empty.
+            2. Anti-Hallucination: Do NOT infer 'waktu' from 'Now' context. Only use explicit audio/text content. If time is not spoken, set null.
+            3. No Preamble. No Markdown.
+            
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
-            - RECAP: {{ "intent_type": "RECAP" }}
-            - ASK: {{ "intent_type": "ASK", "query": "str" }}
-            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "data": {{...}} }}
+            - RECAP: {{ "intent_type": "RECAP", "reply": null }}
+            - ASK: {{ "intent_type": "ASK", "query": "str", "reply": null }}
+            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "reply": null, "data": {{...}} }}
             Schemas:
             - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
             - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
@@ -74,14 +80,15 @@ class ListenerAgent:
             # Input Text
             prompt_parts.append(f"In: {user_input}\nOut JSON:") 
 
-            # Config: ZERO TEMP + JSON MODE (Eliminate Thinking Tax)
+            # Config: ZERO TEMP + JSON MODE + TIMED BUDGET
             config = types.GenerateContentConfig(
                 temperature=0.0, 
                 top_p=0.95,
                 response_mime_type="application/json",
                 system_instruction=system_instruction,
-                # CRITICAL: Disable "Thinking Process" to save tokens
-                thinking_config={"include_thoughts": False} 
+                # CRITICAL: Set thinking budget to 1 (minimal) to kill overhead
+                # Using generic dict to avoid SDK version issues
+                thinking_config={"thinking_budget": 1} 
             )
             
             response = self.client.models.generate_content(
