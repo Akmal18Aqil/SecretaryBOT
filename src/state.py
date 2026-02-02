@@ -14,3 +14,4 @@ class AgentState(TypedDict):
     error: Optional[str]
     telegram_id: Optional[int]  # Required for sending callbacks
     approval_status: Optional[str] # PENDING, APPROVED, REJECTED
+    audio_path: Optional[str]   # New: Path to temporary audio file (ogg)

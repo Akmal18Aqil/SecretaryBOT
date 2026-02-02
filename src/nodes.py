@@ -36,7 +36,8 @@ def node_listener(state: AgentState):
     
     # Extract History from State
     history = state.get('parsed_json')
-    json_result = listener_agent.process_request(user_input, history_context=history)
+    audio_path = state.get('audio_path')
+    json_result = listener_agent.process_request(user_input, history_context=history, audio_path=audio_path)
     
     updates = {'parsed_json': json_result}
     

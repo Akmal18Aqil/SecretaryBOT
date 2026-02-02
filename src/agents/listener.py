@@ -16,8 +16,8 @@ class ListenerAgent:
         else:
             self.client = None
 
-    def process_request(self, user_input, history_context=None):
-        logger.info(f"Mendengar permintaan: '{user_input}'...")
+    def process_request(self, user_input, history_context=None, audio_path=None):
+        logger.info(f"Mendengar permintaan: '{user_input}' (Audio: {bool(audio_path)})...")
         
         if not self.client:
             logger.warning("API Key tidak ditemukan. Menggunakan MOCK MODE (Simulasi AI).")
@@ -72,6 +72,21 @@ class ListenerAgent:
             **Input:** "{user_input}"
             **Output:** JSON only.
             """ 
+            
+            prompt_parts = [system_instruction]
+            
+            # Handle Audio
+            if audio_path and os.path.exists(audio_path):
+                logger.info(f"Uploading audio to Gemini: {audio_path}")
+                with open(audio_path, "rb") as f:
+                    audio_data = f.read()
+                
+                # Input Audio as Part
+                prompt_parts.append(types.Part.from_bytes(data=audio_data, mime_type="audio/ogg"))
+                prompt_parts.append("Transkripsikan audio ini dan ekstrak intent sesuai instruksi JSON di atas.")
+            
+            # Input Text
+            prompt_parts.append(f"Input Text: {user_input}\nOutput JSON:") 
 
             # Config: LOW TEMP for Logic/Classification
             # Explicitly disable tools to prevent "Phantom Token" usage
@@ -84,7 +99,7 @@ class ListenerAgent:
             
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=f"Input: {user_input}\nOutput JSON:",
+                contents=prompt_parts,
                 config=config
             )
             

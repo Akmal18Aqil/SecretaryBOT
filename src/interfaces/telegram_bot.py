@@ -17,10 +17,38 @@ class TelegramInterface:
         def send_welcome(message):
             self.bot.reply_to(message, "👋 Halo! Saya Secretary Swarm.\n\nSilakan perintahkan saya untuk membuat surat.\nContoh: 'Buatkan surat undangan rapat besok jam 8'")
 
-        @self.bot.message_handler(func=lambda message: True)
+        @self.bot.message_handler(content_types=['text', 'voice', 'audio'])
         def handle_message(message):
             chat_id = message.chat.id
-            user_input = message.text
+            user_input = message.text or "[AUDIO MESSAGE]"
+            audio_path = None
+
+            # Handle Audio Download
+            if message.content_type in ['voice', 'audio']:
+                try:
+                    file_id = message.voice.file_id if message.voice else message.audio.file_id
+                    file_info = self.bot.get_file(file_id)
+                    downloaded_file = self.bot.download_file(file_info.file_path)
+                    
+                    # Create Temp Dir
+                    temp_dir = os.path.join(os.getcwd(), 'temp')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    
+                    # Save File
+                    ext = file_info.file_path.split('.')[-1]
+                    file_name = f"voice_{chat_id}_{message.message_id}.{ext}"
+                    audio_path = os.path.join(temp_dir, file_name)
+                    
+                    with open(audio_path, 'wb') as new_file:
+                        new_file.write(downloaded_file)
+                        
+                    logger.info(f"Audio saved at: {audio_path}")
+                    user_input = f"[AUDIO] {user_input}" # Marker for logs
+                    
+                except Exception as e:
+                    logger.error(f"Failed to download audio: {e}")
+                    self.bot.reply_to(message, "⚠️ Gagal mengunduh audio.")
+                    return
             
             # --- AUTH CHECK ---
             if not db.check_access(chat_id):
@@ -36,8 +64,8 @@ class TelegramInterface:
                 # 2. Invoke LangGraph
                 inputs = {
                     "user_input": user_input, 
-                    # "telegram_id": chat_id # Pass ID to workflow if needed later
-                    "telegram_id": chat_id
+                    "telegram_id": chat_id,
+                    "audio_path": audio_path
                 }
                 # Use Checkpointer Thread ID
                 config = {"configurable": {"thread_id": str(chat_id)}}
