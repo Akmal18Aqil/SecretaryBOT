@@ -44,37 +44,22 @@ class ListenerAgent:
                 history_str = f"PREVIOUS_JSON_STATE: {history_context}"
 
             system_instruction = f"""
-            **Context:** Now={current_time}.
-            
-            **History (Previous State):**
-            {history_str}
-
-            **Task:** 
-            1. Analyze **Input** relative to **History**.
-            2. If **Input** is a follow-up (e.g., adds detail like time/place), UPDATE the **History** JSON.
-            3. If **Input** is a new request, IGNORE history and create new JSON.
-            4. Classify intent and extract entities.
-
-            **Intents:**
-            1. **CHAT**: Casual/Greeting.
-               Output: {{ "intent_type": "CHAT", "reply": "Polite response" }}
-            2. **RECAP**: Reports/Logs.
-               Output: {{ "intent_type": "RECAP" }}
-            3. **ASK**: Q&A/Knowledge.
-               Output: {{ "intent_type": "ASK", "query": "Optimized query" }}
-            4. **WORK**: Document drafting.
-               Rules: Calculate dates relative to Now. Merge with History if related.
-               Schemas:
-                 - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
-                 - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
-                 - `notulensi`: [hari_tanggal, waktu, tempat, agenda, pembahasan, kesimpulan, tugas]
-               Output: {{ "intent_type": "WORK", "jenis_surat": "...", "data": {{...}} }}
-
-            **Input:** "{user_input}"
-            **Output:** JSON only.
+            CTX: Now={current_time}. History={history_str}
+            TASK: Analyze Input vs History. If follow-up, UPDATE History. If new, IGNORE History.
+            OUTPUT: JSON only.
+            Ref:
+            - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
+            - RECAP: {{ "intent_type": "RECAP" }}
+            - ASK: {{ "intent_type": "ASK", "query": "str" }}
+            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "data": {{...}} }}
+            Schemas:
+            - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
+            - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
+            - `notulensi`: [hari_tanggal, waktu, tempat, agenda, pembahasan, kesimpulan, tugas]
             """ 
             
-            prompt_parts = [system_instruction]
+            # FIX: Do NOT include system_instruction in prompt_parts (Double Entry Error)
+            prompt_parts = []
             
             # Handle Audio
             if audio_path and os.path.exists(audio_path):
@@ -84,10 +69,10 @@ class ListenerAgent:
                 
                 # Input Audio as Part
                 prompt_parts.append(types.Part.from_bytes(data=audio_data, mime_type="audio/ogg"))
-                prompt_parts.append("Transkripsikan audio ini dan ekstrak intent sesuai instruksi JSON di atas.")
+                prompt_parts.append("Transkrip & Ekstrak JSON.")
             
             # Input Text
-            prompt_parts.append(f"Input Text: {user_input}\nOutput JSON:") 
+            prompt_parts.append(f"In: {user_input}\nOut JSON:") 
 
             # Config: LOW TEMP for Logic/Classification
             # Explicitly disable tools to prevent "Phantom Token" usage
@@ -95,7 +80,7 @@ class ListenerAgent:
                 temperature=0.1, 
                 top_p=0.95,
                 system_instruction=system_instruction,
-                tools=None # Explicitly None to prevent Phantom Tokens
+                tools=None 
             )
             
             response = self.client.models.generate_content(
@@ -104,10 +89,10 @@ class ListenerAgent:
                 config=config
             )
             
-            # Log Token Usage
+            # Log Token Usage (Full Debug)
             if response.usage_metadata:
                 usage = response.usage_metadata
-                logger.info(f"💰 Token Usage [Listener]: Input={usage.prompt_token_count}, Output={usage.candidates_token_count}, Total={usage.total_token_count}")
+                logger.info(f"💰 Token Usage: {usage}")
             
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
             logger.info(f"JSON Generated:\n{clean_json}")
