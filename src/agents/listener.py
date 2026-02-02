@@ -49,15 +49,15 @@ class ListenerAgent:
             OUTPUT: JSON only. Strict Compliance Required.
             
             RULES:
-            1. `reply` field is MANDATORY. set to null if empty.
-            2. Anti-Hallucination: Do NOT infer 'waktu' from 'Now' context. Only use explicit audio/text content. If time is not spoken, set null.
-            3. No Preamble. No Markdown.
+            1. DATE RESOLUTION: Convert relative dates (e.g., "besok", "minggu depan") to Absolute Format (DD Month YYYY) based on 'Now'.
+            2. FALLBACK: If mandatory fields (waktu, tempat, agenda) are missing/null, YOU MUST fill `reply` with a question.
+            3. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
             
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
             - RECAP: {{ "intent_type": "RECAP", "reply": null }}
             - ASK: {{ "intent_type": "ASK", "query": "str", "reply": null }}
-            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "reply": null, "data": {{...}} }}
+            - WORK: {{ "intent_type": "WORK", "jenis_surat": "str", "reply": "Question if missing data else null", "data": {{...}} }}
             Schemas:
             - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
             - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]

@@ -66,7 +66,15 @@ def node_listener(state: AgentState):
                 
             # Case D: Work Mode
             else:
-                updates['intent'] = parsed.get('jenis_surat')
+                # CIRCUIT BREAKER: Check if Listener has a question (Missing Data)
+                reply_needed = parsed.get('reply')
+                if reply_needed:
+                    logger.info(f"Circuit Breaker Triggered: {reply_needed}")
+                    updates['chat_reply'] = reply_needed
+                    # Do NOT set 'intent', downstream nodes will skip.
+                else:
+                    # Happy Path: Data Complete
+                    updates['intent'] = parsed.get('jenis_surat')
         else:
             updates['error'] = "Listener failed to generate JSON"
     except Exception as e:
