@@ -80,7 +80,8 @@ class ListenerAgent:
                 top_p=0.95,
                 response_mime_type="application/json",
                 system_instruction=system_instruction,
-                tools=None 
+                # CRITICAL: Disable "Thinking Process" to save tokens
+                thinking_config={"include_thoughts": False} 
             )
             
             response = self.client.models.generate_content(
