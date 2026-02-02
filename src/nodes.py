@@ -39,7 +39,14 @@ def node_listener(state: AgentState):
     audio_path = state.get('audio_path')
     json_result = listener_agent.process_request(user_input, history_context=history, audio_path=audio_path)
     
-    updates = {'parsed_json': json_result}
+    # FIX: Initialize updates with None to CLEAR stale state from previous turns
+    # This prevents "Memory Ghost" where old questions persist forever.
+    updates = {
+        'parsed_json': json_result, 
+        'chat_reply': None, 
+        'error': None,
+        'intent': None # Reset intent too
+    }
     
     try:
         if json_result:
