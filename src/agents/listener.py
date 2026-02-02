@@ -45,13 +45,14 @@ class ListenerAgent:
 
             system_instruction = f"""
             CTX: Now={current_time}. History={history_str}
-            TASK: Analyze Input vs History. If follow-up, UPDATE History. If new, IGNORE History.
+            TASK: Analyze Input vs History. If Input answers a question in History, UPDATE History. Only default to NEW if Input is unrelated.
             OUTPUT: JSON only. Strict Compliance Required.
             
             RULES:
             1. DATE RESOLUTION: Convert relative dates (e.g., "besok", "minggu depan") to Absolute Format (DD Month YYYY) based on 'Now'.
             2. FALLBACK: If mandatory fields (waktu, tempat, agenda) are missing/null, YOU MUST fill `reply` with a question.
             3. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
+            4. CONTEXT MERGE: If History has a 'reply' (question) and Input is a short answer, MERGE Input into History. Do NOT create a new blank request.
             
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
