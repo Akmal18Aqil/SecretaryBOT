@@ -67,6 +67,7 @@ class ListenerAgent:
                Schemas:
                  - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
                  - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
+                 - `notulensi`: [hari_tanggal, waktu, tempat, agenda, pembahasan, kesimpulan, tugas]
                Output: {{ "intent_type": "WORK", "jenis_surat": "...", "data": {{...}} }}
 
             **Input:** "{user_input}"
