@@ -1,4 +1,7 @@
 import json
+import os
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from src.state import AgentState
 from src.agents.listener import ListenerAgent
 from src.agents.clerk import ClerkAgent
@@ -129,6 +132,53 @@ def node_drafter(state: AgentState):
         logger.warning(f"Failed to log to DB: {e}")
         
     return {'document_path': doc_path}
+
+def node_approver(state: AgentState):
+    """
+    Node 3.5: Approver (Human in the Loop)
+    Sends the draft to the user for confirmation.
+    """
+    # SKIP if Error OR Chat Mode
+    if state.get('error') or state.get('chat_reply'):
+        return {}
+
+    logger.info("Node: Approver Active")
+    doc_path = state.get('document_path')
+    telegram_id = state.get('telegram_id')
+
+    if not doc_path or not telegram_id:
+        logger.warning(f"Approver skipped: Missing doc_path ({doc_path}) or telegram_id ({telegram_id})")
+        return {}
+
+    # Initialize Bot for Sending Message (Stateless usage)
+    bot = telebot.TeleBot(settings.TELEGRAM_BOT_TOKEN)
+
+    # Prepare Buttons
+    markup = InlineKeyboardMarkup()
+    btn_acc = InlineKeyboardButton("✅ Setujui (Final)", callback_data="ACC")
+    btn_reject = InlineKeyboardButton("❌ Revisi", callback_data="REVISI")
+    markup.add(btn_acc, btn_reject)
+
+    # Send Document
+    try:
+        if os.path.exists(doc_path):
+            with open(doc_path, 'rb') as doc:
+                bot.send_document(
+                    chat_id=telegram_id, 
+                    document=doc, 
+                    caption="📄 **DRAFT SURAT**\n\nMohon diperiksa sebelum difinalisasi.",
+                    reply_markup=markup,
+                    parse_mode="Markdown"
+                )
+            logger.info(f"Draft sent to {telegram_id} for approval.")
+            return {'approval_status': 'PENDING'}
+        else:
+            logger.error(f"Document not found at {doc_path}")
+            return {'error': "Document lost before approval."}
+    except Exception as e:
+        logger.error(f"Failed to send draft: {e}")
+        return {'error': f"Failed to send draft: {str(e)}"}
+
 
 def node_notifier(state: AgentState):
     """

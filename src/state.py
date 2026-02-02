@@ -12,3 +12,5 @@ class AgentState(TypedDict):
     document_path: Optional[str]
     chat_reply: Optional[str]   # New: For small talk replies
     error: Optional[str]
+    telegram_id: Optional[int]  # Required for sending callbacks
+    approval_status: Optional[str] # PENDING, APPROVED, REJECTED

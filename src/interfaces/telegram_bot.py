@@ -37,6 +37,7 @@ class TelegramInterface:
                 inputs = {
                     "user_input": user_input, 
                     # "telegram_id": chat_id # Pass ID to workflow if needed later
+                    "telegram_id": chat_id
                 }
                 # Use Checkpointer Thread ID
                 config = {"configurable": {"thread_id": str(chat_id)}}
@@ -57,7 +58,13 @@ class TelegramInterface:
                     error_msg = final_state['error']
                     reply_text = f"🙏 Mohon Maaf\n\n{error_msg}\n\nSilakan lengkapi instruksi Anda agar saya bisa membantu. 📝"
                     self.bot.reply_to(message, reply_text) 
+                
+                elif final_state.get('approval_status') == 'PENDING':
+                    # Document sent by Approver Node. Waiting for callback.
+                    pass
+
                 elif final_state.get('document_path'):
+                    # Fallback for old flow or auto-approved
                     doc_path = final_state['document_path']
                     if os.path.exists(doc_path):
                         with open(doc_path, 'rb') as doc:
@@ -73,6 +80,16 @@ class TelegramInterface:
             
             # Optional: Delete 'processing' message to keep chat clean
             # self.bot.delete_message(chat_id, msg_processing.message_id)
+
+        @self.bot.callback_query_handler(func=lambda call: True)
+        def handle_query(call):
+            if call.data == "ACC":
+                self.bot.answer_callback_query(call.id, "Dokumen Disetujui ✅")
+                self.bot.send_message(call.message.chat.id, "✅ **STATUS: FINAL**\nDokumen telah disetujui dan diarsipkan.", parse_mode="Markdown")
+                # Here we could trigger a 'Finalizer' node if we wanted to move files
+            elif call.data == "REVISI":
+                self.bot.answer_callback_query(call.id, "Siap Revisi ❌")
+                self.bot.send_message(call.message.chat.id, "❌ **STATUS: REVISI**\nSilakan ketik bagian mana yang perlu diperbaiki. Saya akan mendengarkan.")
 
     def start_polling(self):
         logger.info("🤖 Telegram Bot Berjalan...")
