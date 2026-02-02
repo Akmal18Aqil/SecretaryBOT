@@ -52,10 +52,11 @@ class ListenerAgent:
             1. EXTRACT details from Input & History (Merge Context).
             2. ENRICH Content: Create detailed summary for 'pembahasan', derive 'kesimpulan' and 'tugas'.
             3. VALIDATE Mandatory Fields:
-               - `notulensi`: Requires [hari_tanggal, waktu, tempat, agenda].
-               - `undangan_internal`: Requires [hari_tanggal, waktu, tempat, acara].
+               - `notulensi`: Check [hari_tanggal, waktu, tempat, agenda].
+               - `undangan_internal`: Check [hari_tanggal, waktu, tempat, acara].
             4. DECISION:
-               - IF any mandatory field is MISSING/NULL: Set `reply` = "Mohon informasikan [missing item]nya?" 
+               - Identify WHICH specific fields are null from the mandatory list.
+               - IF missing fields exist: Set `reply` = "Mohon informasikan [mention only the missing fields]?"
                - ELSE: Set `reply` = null.
             
             RULES:
