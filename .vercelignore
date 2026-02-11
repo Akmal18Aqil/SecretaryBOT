@@ -1,0 +1,11 @@
+dist
+build
+output
+.git
+.venv
+__pycache__
+*.pyc
+*.spec
+docs
+tests
+Scripts

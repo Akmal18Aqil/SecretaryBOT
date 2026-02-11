@@ -117,12 +117,64 @@ def create_peminjaman():
     document.save(path)
     print(f"[SUCCESS] Template Peminjaman dibuat: {path}")
 
+def create_peminjaman_ruangan():
+    filename = 'tpl_peminjaman_ruangan.docx'
+    document = Document()
+    create_header(document)
+    
+    document.add_heading('SURAT PEMINJAMAN RUANGAN', level=1).alignment = WD_ALIGN_PARAGRAPH.CENTER
+    document.add_paragraph(f"Nomor: {'{{ nomor_surat }}'}")
+    
+    document.add_paragraph("Kepada Yth.")
+    p_to = document.add_paragraph("Kepala Bagian Umum")
+    p_to.style.font.bold = True
+    document.add_paragraph("di Tempat")
+    document.add_paragraph("") 
+    
+    document.add_paragraph("Assalamu'alaikum Wr. Wb.")
+    document.add_paragraph("Saya yang bertanda tangan di bawah ini:")
+    
+    p_nama = document.add_paragraph()
+    p_nama.add_run("Nama Pemohon\t: ").bold = True
+    p_nama.add_run("{{ pemohon }}") 
+    
+    document.add_paragraph("Bermaksud meminjam ruangan untuk kegiatan {{ acara }}, dengan rincian sebagai berikut:")
+    
+    p_ruang = document.add_paragraph()
+    p_ruang.add_run("Ruangan\t\t: ").bold = True
+    p_ruang.add_run("{{ nama_ruangan }}")
+
+    p_tanggal = document.add_paragraph()
+    p_tanggal.add_run("Hari/Tanggal\t: ").bold = True
+    p_tanggal.add_run("{{ hari_tanggal }}")
+    
+    p_waktu = document.add_paragraph()
+    p_waktu.add_run("Waktu\t\t: ").bold = True
+    p_waktu.add_run("{{ waktu_mulai }} s/d {{ waktu_selesai }}")
+
+    document.add_paragraph("")
+    document.add_paragraph("Kami bertanggung jawab penuh atas kebersihan dan kerapihan ruangan setelah digunakan.")
+    document.add_paragraph("Wassalamu'alaikum Wr. Wb.")
+    
+    document.add_paragraph("")
+    sig = document.add_paragraph("Pemohon,")
+    sig.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    document.add_paragraph("")
+    document.add_paragraph("")
+    sig_name = document.add_paragraph("( {{ pemohon }} )")
+    sig_name.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    path = os.path.join(TEMPLATE_DIR, filename)
+    document.save(path)
+    print(f"[SUCCESS] Template Peminjaman Ruangan dibuat: {path}")
+
 def main():
     if not os.path.exists(TEMPLATE_DIR):
         os.makedirs(TEMPLATE_DIR)
     
     create_undangan()
     create_peminjaman()
+    create_peminjaman_ruangan()
 
 if __name__ == "__main__":
     main()

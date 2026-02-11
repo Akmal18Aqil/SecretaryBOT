@@ -54,6 +54,7 @@ class ListenerAgent:
             3. VALIDATE Mandatory Fields:
                - `notulensi`: Check [hari_tanggal, waktu, tempat, agenda].
                - `undangan_internal`: Check [hari_tanggal, waktu, tempat, acara].
+               - `peminjaman_ruangan`: Check [hari_tanggal, waktu_mulai, waktu_selesai, nama_ruangan, acara].
             4. DECISION:
                - Identify WHICH specific fields are null from the mandatory list.
                - IF missing fields exist: Set `reply` = "Mohon informasikan [mention only the missing fields]?"
@@ -61,7 +62,8 @@ class ListenerAgent:
             
             RULES:
             1. DATE RESOLUTION: Convert relative dates to Absolute Format (DD Month YYYY) based on 'Now'.
-            2. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
+            2. TIME RESOLUTION: Ensure 'waktu_mulai' and 'waktu_selesai' are explicit. If only duration is given (e.g., "selama 2 jam"), calculate end time from start time.
+            3. Anti-Hallucination: Do NOT infer time from metadata. Only use explicit audio/text content.
             
             Ref:
             - CHAT: {{ "intent_type": "CHAT", "reply": "str" }}
@@ -71,6 +73,7 @@ class ListenerAgent:
             Schemas:
             - `undangan_internal`: [nomor_surat, penerima, acara, hari_tanggal, waktu, tempat]
             - `peminjaman_barang`: [nomor_surat, pemohon, keperluan, nama_barang, waktu_pinjam]
+            - `peminjaman_ruangan`: [nomor_surat, pemohon, nama_ruangan, acara, hari_tanggal, waktu_mulai, waktu_selesai]
             - `notulensi`: [hari_tanggal, waktu, tempat, agenda, pembahasan, kesimpulan, tugas]
             """ 
             
