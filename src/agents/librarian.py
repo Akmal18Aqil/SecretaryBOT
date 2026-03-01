@@ -16,7 +16,7 @@ class LibrarianAgent:
         """
         try:
             result = self.client.models.embed_content(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-001",
                 contents=text,
                 config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
             )

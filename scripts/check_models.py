@@ -3,7 +3,7 @@ import os
 import sys
 
 # Add root to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.core.config import settings
 
 def list_models():
@@ -14,13 +14,12 @@ def list_models():
 
     client = genai.Client(api_key=key)
 
-    print("--- AVAILABLE GEMINI MODELS ---")
+    print("--- ALL AVAILABLE MODELS ---")
     try:
-        # Pager object, iterate to find models
-        for m in client.models.list():
-            # Check naming convention for Gemini models
-            if "gemini" in m.name:
-               print(f"✅ {m.name}")
+        with open("models_list.txt", "w") as f:
+            for m in client.models.list():
+                f.write(f"{m.name}\n")
+        print("✅ Models written to models_list.txt")
     except Exception as e:
         print(f"❌ Error fetching models: {e}")
 

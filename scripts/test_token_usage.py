@@ -3,7 +3,7 @@ import sys
 import os
 
 # Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.agents.listener import ListenerAgent
 from src.core.config import settings

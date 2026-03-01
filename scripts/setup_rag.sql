@@ -5,7 +5,8 @@ create extension if not exists vector;
 create table knowledge_base (
   id uuid default uuid_generate_v4() primary key,
   content text not null,                -- Isi SOP / Data
-  embedding vector(768),                -- Vektor dari Gemini (768 dimensi)
+  embedding vector(3072),               -- Vektor dari Gemini (3072 dimensi)
+  file_url text,                        -- URL File di Storage
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -17,13 +18,14 @@ create policy "Admin Insert Access" on knowledge_base for insert with check (tru
 -- 4. Create Search Function (RPC)
 -- Fungsi ini akan dipanggil oleh Bot untuk mencari data mirip
 create or replace function match_documents (
-  query_embedding vector(768),
+  query_embedding vector(3072),
   match_threshold float,
   match_count int
 )
 returns table (
   id uuid,
   content text,
+  file_url text,                        -- Return the file URL
   similarity float
 )
 language plpgsql
@@ -33,6 +35,7 @@ begin
   select
     knowledge_base.id,
     knowledge_base.content,
+    knowledge_base.file_url,
     1 - (knowledge_base.embedding <=> query_embedding) as similarity
   from knowledge_base
   where 1 - (knowledge_base.embedding <=> query_embedding) > match_threshold

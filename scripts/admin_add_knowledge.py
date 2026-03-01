@@ -10,7 +10,7 @@ from google.api_core.exceptions import ResourceExhausted
 import re
 
 # Add root project to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.core.config import settings
 from src.core.database import db
@@ -122,7 +122,7 @@ def get_embedding(text):
     while retry_count < 3:
         try:
             result = client.models.embed_content(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-001",
                 contents=text,
                 config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT", title="Knowledge Base")
             )
